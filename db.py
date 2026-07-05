@@ -84,6 +84,18 @@ def mark_notified(key):
     conn.commit()
     conn.close()
 
+def get_unvalidated():
+    conn = get_db()
+    rows = conn.execute("SELECT * FROM findings WHERE validated=0").fetchall()
+    conn.close()
+    return [dict(r) for r in rows]
+
+def mark_validated(key_hash_val, valid):
+    conn = get_db()
+    conn.execute("UPDATE findings SET validated=1, valid=? WHERE key_hash=?", (int(valid), key_hash_val))
+    conn.commit()
+    conn.close()
+
 def get_unnotified_live():
     conn = get_db()
     rows = conn.execute("SELECT * FROM findings WHERE valid=1 AND notified=0").fetchall()

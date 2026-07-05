@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 import os, sys, time, json
 from pathlib import Path
-from db import init, get_unnotified_live, mark_notified
+from db import init, get_unvalidated, get_unnotified_live, mark_notified, mark_validated
 from patterns import extract_keys, validate_key
 import validators
 import sources
@@ -31,25 +31,32 @@ def write_findings(findings):
 
 def run_validation():
     print("\n===== VALIDATING LIVE KEYS =====")
-    items = get_unnotified_live()
-    print(f"  {len(items)} unnotified live keys in DB")
+    items = get_unvalidated()
+    print(f"  {len(items)} unvalidated keys")
     for item in items:
         key = item["key_value"]
         svc = item["service"]
+        kh = item["key_hash"]
         result = validate_key(svc, key)
         if result == "error":
             print(f"  {svc}: {key[:40]}... error (network)")
+            mark_validated(kh, 0)
             continue
         if result == "unknown":
-            print(f"  {svc}: {key[:40]}... no validator")
+            print(f"  {svc}: {key[:40]}... no validator, skipping")
+            mark_validated(kh, 0)
             continue
         if result:
-            msg = f"🔥 *LIVE API KEY FOUND*\nService: {svc}\nKey: `{key[:30]}...`\nSource: {item['source']}\nRepo: {item.get('repo', 'N/A')}"
-            print(f"  ✓ LIVE: {svc} | {key[:40]}... | {item['source']}/{item.get('repo','?')[:40]}")
-            telegram_alert(msg)
-            mark_notified(key)
+            mark_validated(kh, 1)
+            already_notified = item.get("notified", 0)
+            if not already_notified:
+                msg = f"🔥 *LIVE API KEY FOUND*\nService: {svc}\nKey: `{key[:30]}...`\nSource: {item['source']}\nRepo: {item.get('repo', 'N/A')}"
+                print(f"  ✓ LIVE: {svc} | {key[:40]}... | {item['source']}/{item.get('repo','?')[:40]}")
+                telegram_alert(msg)
+                mark_notified(key)
         else:
             print(f"  ✗ revoked: {svc} | {key[:40]}...")
+            mark_validated(kh, 0)
 
 def main():
     start = time.time()
