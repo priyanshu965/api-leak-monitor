@@ -322,27 +322,8 @@ def process_push_event(event):
                 f"{item['commit']}"
             )
 
-            if IS_CI and GITHUB_REPO:
-                issue_title = f"Leaked {item['service']} key in {repo}"
-                issue_body = (
-                    f"**Service:** {item['service']}\n\n"
-                    f"**Key:** `{item['key']}`\n\n"
-                    f"**Repo:** {repo}\n\n"
-                    f"**File:** {item['file']}\n\n"
-                    f"**Entropy:** {item['entropy']:.2f}\n\n"
-                    f"**Valid:** {item['valid']}\n\n"
-                    f"**Commit:** {item['commit']}\n\n"
-                    f"---\n*Automated scan*"
-                )
-                try:
-                    requests.post(
-                        f"https://api.github.com/repos/{GITHUB_REPO}/issues",
-                        headers=HEADERS,
-                        json={"title": issue_title[:256], "body": issue_body},
-                        timeout=10,
-                    )
-                except Exception:
-                    pass
+            if IS_CI:
+                print(f"FOUND: [{item['service']}] {item['key'][:40]}... in {repo}/{item['file']}")
 
 
 # ──────────────────────────────────────────────
