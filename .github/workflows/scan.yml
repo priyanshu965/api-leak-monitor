@@ -10,7 +10,6 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       contents: write
-      issues: write
 
     steps:
       - uses: actions/checkout@v4
@@ -19,27 +18,33 @@ jobs:
         with:
           python-version: '3.12'
 
-      - run: pip install requests python-dotenv
+      - name: Install deps
+        run: pip install requests python-dotenv
 
-      - name: Run scan
+      - name: Install gitleaks
+        run: |
+          VERSION=$(curl -s https://api.github.com/repos/gitleaks/gitleaks/releases/latest | python3 -c "import json,sys; print(json.load(sys.stdin)['tag_name'])")
+          curl -sL "https://github.com/gitleaks/gitleaks/releases/download/$VERSION/gitleaks_${VERSION#v}_linux_x64.tar.gz" -o /tmp/gitleaks.tar.gz
+          tar -xzf /tmp/gitleaks.tar.gz -C /usr/local/bin gitleaks
+
+      - name: Run scan (all sources)
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           GITHUB_REPOSITORY: ${{ github.repository }}
           CI: true
-          VALIDATE_KEYS: ${{ secrets.VALIDATE_KEYS || 'false' }}
+          VALIDATE_KEYS: true
           SCAN_PAGES: 10
           TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
           TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
         run: python scanner.py
 
-      - name: Commit findings log
+      - name: Commit findings
         run: |
-          if [ -f leaked2.txt ] && [ -s leaked2.txt ]; then
-            sort -u findings.log leaked2.txt 2>/dev/null > /tmp/merged.log
-            mv /tmp/merged.log findings.log
+          if [ -f findings.log ] && [ -s findings.log ]; then
+            sort -u findings.log -o findings.log
             git config user.name "scan-bot"
             git config user.email "bot@localhost"
             git add findings.log
-            git commit -m "scan: update findings log"
+            git diff --cached --quiet || git commit -m "scan: update findings"
             git push
           fi
