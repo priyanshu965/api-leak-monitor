@@ -50,7 +50,11 @@ def run_validation():
             mark_validated(kh, 1)
             already_notified = item.get("notified", 0)
             if not already_notified:
-                msg = f"🔥 *LIVE API KEY FOUND*\nService: {svc}\nKey: `{key}`\nSource: {item['source']}\nRepo: {item.get('repo', 'N/A')}"
+                ctx = item.get('context', '')
+                fp = item.get('file_path', '')
+                context_str = f"\nFile: {fp}" if fp else ""
+                context_str += f"\nURL: {ctx}" if ctx else ""
+                msg = f"🔥 *LIVE API KEY FOUND*\nService: {svc}\nKey: `{key}`\nSource: {item['source']}\nRepo: {item.get('repo', 'N/A')}{context_str}"
                 print(f"  ✓ LIVE: {svc} | {key[:40]}... | {item['source']}/{item.get('repo','?')[:40]}")
                 telegram_alert(msg)
                 mark_notified(key)
