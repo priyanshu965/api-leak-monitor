@@ -1,4 +1,5 @@
-venv/
 __pycache__/
 *.pyc
-.env
+findings.log
+scanner.db
+.DS_Store

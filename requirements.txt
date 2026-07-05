@@ -1,0 +1,2 @@
+requests>=2.31.0
+gitleaks>=8.18.2

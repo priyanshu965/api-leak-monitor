@@ -1,0 +1,38 @@
+name: Scan Events
+on:
+  schedule:
+    - cron: "*/2 * * * *"
+  workflow_dispatch:
+    inputs:
+      pages:
+        description: Number of event pages to scan
+        default: "10"
+        required: false
+
+permissions:
+  contents: read
+
+jobs:
+  scan:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+      - name: Run events scan
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          TELEGRAM_TOKEN: ${{ secrets.TELEGRAM_TOKEN }}
+          TELEGRAM_CHAT: ${{ secrets.TELEGRAM_CHAT }}
+          SCAN_PAGES: ${{ github.event.inputs.pages || '10' }}
+        run: python scanner.py
+      - name: Upload findings
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: findings-events-${{ github.run_id }}
+          path: findings.log
+          retention-days: 7
