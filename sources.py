@@ -153,14 +153,17 @@ def scan_censys():
     print("\n[Censys]")
     if not CENSYS_SECRET: return print("  No API key")
     try:
-        r = requests.get("https://search.censys.io/api/v2/hosts/search?q=.env",
-            headers={"Accept": "application/json", "Authorization": f"Bearer {CENSYS_SECRET}"}, timeout=15)
-        if r.status_code == 401:
-            import base64
-            auth_b64 = base64.b64encode(f"{CENSYS_SECRET}:{CENSYS_SECRET}".encode()).decode()
-            r = requests.get("https://search.censys.io/api/v2/hosts/search?q=.env",
-                headers={"Accept": "application/json", "Authorization": f"Basic {auth_b64}"}, timeout=15)
-        if r.status_code != 200: return print(f"  API error: {r.status_code}")
+        # censys_{api_id}_{secret} format OR full token
+        import base64
+        parts = CENSYS_SECRET.split("_")
+        if len(parts) >= 3 and parts[0] == "censys":
+            uid, secret = parts[1], parts[2]
+        else:
+            uid, secret = parts[0], CENSYS_SECRET
+        auth_b64 = base64.b64encode(f"{uid}:{secret}".encode()).decode()
+        r = requests.get("https://search.censys.io/api/v2/hosts/search?q=.env+AND+services.service_name=HTTP",
+            headers={"Accept": "application/json", "Authorization": f"Basic {auth_b64}"}, timeout=15)
+        if r.status_code != 200: return print(f"  API error: {r.status_code} (tried uid={uid[:8]}... secret={secret[:8]}...)")
         for hit in r.json().get("result", {}).get("hits", [])[:30]:
             ip = hit.get("ip", "?"); services = hit.get("services", [])
             for svc in services:
