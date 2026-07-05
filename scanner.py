@@ -40,13 +40,53 @@ if GITHUB_TOKEN:
 # ──────────────────────────────────────────────
 
 PATTERNS = [
+    # ── OpenAI ──
     (r"sk-proj-[A-Za-z0-9_-]{20,100}T3BlbkFJ[A-Za-z0-9_-]{20,100}", "OpenAI Project"),
     (r"sk-svcacct-[A-Za-z0-9_-]{20,100}T3BlbkFJ[A-Za-z0-9_-]{20,100}", "OpenAI Service Account"),
     (r"sk-admin-[A-Za-z0-9_-]{20,100}T3BlbkFJ[A-Za-z0-9_-]{20,100}", "OpenAI Admin"),
     (r"sk-[A-Za-z0-9]{20,42}T3BlbkFJ[A-Za-z0-9]{20,42}", "OpenAI Legacy"),
+    # ── Anthropic ──
     (r"sk-ant-api03-[A-Za-z0-9_-]{70,110}", "Anthropic"),
-    (r"AIzaSy[A-Za-z0-9_-]{33}", "Google"),
+    (r"sk-ant-oat[0-9a-z]+-[A-Za-z0-9_-]{50,90}", "Anthropic"),
+    # ── Google ──
+    (r"AIzaSy[A-Za-z0-9_-]{33}", "Google Gemini"),
+    # ── xAI Grok ──
+    (r"xai-[A-Za-z0-9]{30,70}", "xAI Grok"),
+    # ── DeepSeek ──
+    (r"sk-[a-f0-9]{32,64}", "DeepSeek"),
+    # ── OpenRouter ──
+    (r"sk-or-v1-[A-Za-z0-9_-]{40,100}", "OpenRouter"),
+    # ── Groq ──
     (r"gsk_[a-zA-Z0-9]{45,60}", "Groq"),
+    # ── HuggingFace ──
+    (r"hf_[A-Za-z0-9]{30,60}", "HuggingFace"),
+    # ── Replicate ──
+    (r"r8_[A-Za-z0-9]{30,50}", "Replicate"),
+    # ── Mistral ──
+    (r"mist_[A-Za-z0-9]{25,60}", "Mistral"),
+    # ── Perplexity ──
+    (r"pplx-[A-Za-z0-9_-]{30,80}", "Perplexity"),
+    # ── Together AI ──
+    (r"together_[A-Za-z0-9]{30,60}", "Together AI"),
+    # ── Fireworks ──
+    (r"fw_[A-Za-z0-9]{30,50}", "Fireworks"),
+    # ── Cohere ──
+    (r"(cohere|Cohere)[A-Za-z0-9_-]{30,60}", "Cohere"),
+    # ── GitHub ──
+    (r"ghp_[A-Za-z0-9]{36,40}", "GitHub PAT"),
+    (r"github_pat_[A-Za-z0-9_]{60,90}", "GitHub PAT (fine-grained)"),
+    # ── GitLab ──
+    (r"glpat-[A-Za-z0-9_-]{20,40}", "GitLab PAT"),
+    # ── Slack ──
+    (r"xox[baprs]-[A-Za-z0-9-]{20,80}", "Slack Token"),
+    # ── Stripe ──
+    (r"sk_live_[A-Za-z0-9]{20,40}", "Stripe Live Secret"),
+    (r"pk_live_[A-Za-z0-9]{20,40}", "Stripe Live Publishable"),
+    (r"rk_live_[A-Za-z0-9]{20,40}", "Stripe Live Restricted"),
+    # ── AWS ──
+    (r"AKIA[0-9A-Z]{16}", "AWS Access Key"),
+    # ── Azure ──
+    (r"DefaultEndpointsProtocol=https;AccountName=[A-Za-z0-9]+;AccountKey=[A-Za-z0-9+/=]{40,100}", "Azure Connection String"),
 ]
 
 ALLOWED_EXTENSIONS = {
@@ -90,7 +130,8 @@ def validate_key(service: str, key: str):
         return "Validation disabled"
 
     try:
-        if service == "OpenAI":
+        # ── OpenAI ──
+        if "OpenAI" in service:
             r = requests.get(
                 "https://api.openai.com/v1/models",
                 headers={"Authorization": f"Bearer {key}"},
@@ -98,10 +139,25 @@ def validate_key(service: str, key: str):
             )
             return r.status_code == 200
 
-        if service == "Anthropic":
+        if "Anthropic" in service:
             r = requests.get(
                 "https://api.anthropic.com/v1/models",
                 headers={"x-api-key": key},
+                timeout=7,
+            )
+            return r.status_code == 200
+
+        if "Google" in service:
+            r = requests.get(
+                f"https://generativelanguage.googleapis.com/v1beta/models?key={key}",
+                timeout=7,
+            )
+            return r.status_code == 200
+
+        if service == "xAI Grok":
+            r = requests.get(
+                "https://api.x.ai/v1/models",
+                headers={"Authorization": f"Bearer {key}"},
                 timeout=7,
             )
             return r.status_code == 200
@@ -114,9 +170,58 @@ def validate_key(service: str, key: str):
             )
             return r.status_code == 200
 
-        if service == "Google":
+        if service == "DeepSeek":
             r = requests.get(
-                f"https://generativelanguage.googleapis.com/v1beta/models?key={key}",
+                "https://api.deepseek.com/v1/models",
+                headers={"Authorization": f"Bearer {key}"},
+                timeout=7,
+            )
+            return r.status_code == 200
+
+        if service == "OpenRouter":
+            r = requests.get(
+                "https://openrouter.ai/api/v1/models",
+                headers={"Authorization": f"Bearer {key}"},
+                timeout=7,
+            )
+            return r.status_code == 200
+
+        if service == "HuggingFace":
+            r = requests.get(
+                "https://huggingface.co/api/models?limit=1",
+                headers={"Authorization": f"Bearer {key}"},
+                timeout=7,
+            )
+            return r.status_code == 200
+
+        if service == "Replicate":
+            r = requests.get(
+                "https://api.replicate.com/v1/models",
+                headers={"Authorization": f"Bearer {key}"},
+                timeout=7,
+            )
+            return r.status_code == 200
+
+        if service == "Mistral":
+            r = requests.get(
+                "https://api.mistral.ai/v1/models",
+                headers={"Authorization": f"Bearer {key}"},
+                timeout=7,
+            )
+            return r.status_code == 200
+
+        if "GitHub" in service:
+            r = requests.get(
+                "https://api.github.com/user",
+                headers={"Authorization": f"Bearer {key}"},
+                timeout=7,
+            )
+            return r.status_code == 200
+
+        if "Stripe" in service:
+            r = requests.get(
+                "https://api.stripe.com/v1/balance",
+                auth=(key, ""),
                 timeout=7,
             )
             return r.status_code == 200
