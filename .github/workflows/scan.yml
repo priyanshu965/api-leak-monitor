@@ -9,7 +9,7 @@ jobs:
   scan:
     runs-on: ubuntu-latest
     permissions:
-      contents: write
+      contents: read
 
     steps:
       - uses: actions/checkout@v4
@@ -38,13 +38,11 @@ jobs:
           TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
         run: python scanner.py
 
-      - name: Commit findings
-        run: |
-          if [ -f findings.log ] && [ -s findings.log ]; then
-            sort -u findings.log -o findings.log
-            git config user.name "scan-bot"
-            git config user.email "bot@localhost"
-            git add findings.log
-            git diff --cached --quiet || git commit -m "scan: update findings"
-            git push
-          fi
+      - name: Upload findings
+        uses: actions/upload-artifact@v4
+        with:
+          name: scan-results
+          path: |
+            findings_full.json
+            findings_report.txt
+          retention-days: 90

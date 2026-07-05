@@ -345,16 +345,19 @@ def main():
         print(f"  Written to findings_new.txt")
 
     if IS_CI and unique:
-        # Merge with existing findings.log
-        existing = set()
-        try:
-            with open("findings.log") as f:
-                for line in f: existing.add(line.strip())
-        except: pass
-        with open("findings.log", "a") as f:
-            for line in unique:
-                if line.strip() not in existing:
-                    f.write(line)
+        with open("findings_report.txt", "w") as f:
+            f.write(f"=== API Key Leak Scan Report ===\n")
+            f.write(f"Date: {time.strftime('%Y-%m-%d %H:%M:%S UTC', time.gmtime())}\n")
+            f.write(f"Total unique findings: {len(unique)}\n\n")
+            for line in sorted(unique):
+                parts = line.split(" | ")
+                key_short = parts[2][:12] + "..." if len(parts) > 2 else "?"
+                masked = f"{parts[0]} | {parts[1]} | {key_short} | {' | '.join(parts[3:])}".strip()
+                f.write(masked + "\n")
+
+        with open("findings_full.json", "w") as f:
+            json.dump([{"source": p[0], "service": p[1], "key": p[2], "repo": p[3], "file": p[4], "context": p[5].strip() if len(p) > 5 else ""}
+                for p in (line.split(" | ") for line in unique)], f, indent=2)
 
     print("Done.")
 
