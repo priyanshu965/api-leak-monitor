@@ -330,18 +330,31 @@ def process_push_event(event):
 # MAIN LOOP
 # ──────────────────────────────────────────────
 
-def scan_once():
-    r = requests.get(
-        "https://api.github.com/events",
-        params={"per_page": 100},
-        headers=HEADERS,
-        timeout=15,
-    )
-    if r.status_code != 200:
-        print(f"API error: {r.status_code}")
-        return
+SCAN_PAGES = int(os.getenv("SCAN_PAGES", "5"))
 
-    events = r.json()
+def scan_once():
+    seen = set()
+    events = []
+
+    for page in range(1, SCAN_PAGES + 1):
+        try:
+            r = requests.get(
+                "https://api.github.com/events",
+                params={"per_page": 100, "page": page},
+                headers=HEADERS,
+                timeout=15,
+            )
+            if r.status_code != 200:
+                break
+            batch = r.json()
+            if not batch:
+                break
+            events.extend(batch)
+        except Exception:
+            break
+
+    print(f"Fetched {len(events)} total events ({SCAN_PAGES} pages)")
+
     count = 0
     for event in reversed(events):
         eid = event.get("id")
@@ -353,7 +366,7 @@ def scan_once():
             process_push_event(event)
             count += 1
 
-    print(f"Scanned {count} push events")
+    print(f"Scanned {count} new push events")
 
 
 def main():
