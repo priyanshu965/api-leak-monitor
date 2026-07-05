@@ -152,13 +152,14 @@ def scan_shodan():
 def scan_censys():
     print("\n[Censys]")
     if not CENSYS_SECRET: return print("  No API key")
-    api_id = CENSYS_SECRET.split("_")[1] if "_" in CENSYS_SECRET else CENSYS_SECRET
-    api_secret = CENSYS_SECRET
     try:
-        r = requests.post("https://search.censys.io/api/v2/hosts/search", json={"q": ".env"}, auth=(api_id, api_secret), timeout=15)
-        if r.status_code != 200:
-            auth_b64 = __import__('base64').b64encode(f"{api_id}:{api_secret}".encode()).decode()
-            r = requests.get("https://search.censys.io/api/v2/hosts/search?q=.env", headers={"Accept": "application/json", "Authorization": f"Basic {auth_b64}"}, timeout=15)
+        r = requests.get("https://search.censys.io/api/v2/hosts/search?q=.env",
+            headers={"Accept": "application/json", "Authorization": f"Bearer {CENSYS_SECRET}"}, timeout=15)
+        if r.status_code == 401:
+            import base64
+            auth_b64 = base64.b64encode(f"{CENSYS_SECRET}:{CENSYS_SECRET}".encode()).decode()
+            r = requests.get("https://search.censys.io/api/v2/hosts/search?q=.env",
+                headers={"Accept": "application/json", "Authorization": f"Basic {auth_b64}"}, timeout=15)
         if r.status_code != 200: return print(f"  API error: {r.status_code}")
         for hit in r.json().get("result", {}).get("hits", [])[:30]:
             ip = hit.get("ip", "?"); services = hit.get("services", [])
