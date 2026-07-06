@@ -71,8 +71,7 @@ def save_finding(service, key, source, repo="", file_path="", context="", entrop
         VALUES (?,?,?,?,?,?,?,?,?,?,?,?)
         ON CONFLICT(key_hash) DO UPDATE SET
             last_seen=excluded.last_seen,
-            validated=excluded.validated,
-            valid=CASE WHEN excluded.validated THEN excluded.valid ELSE findings.valid END
+            source=CASE WHEN findings.source='events' AND excluded.source!='events' THEN excluded.source ELSE findings.source END
     """, (kh, service, key, source, repo, file_path, context, entropy, int(validated), int(valid) if validated else 0, now, now))
     conn.commit()
     conn.close()

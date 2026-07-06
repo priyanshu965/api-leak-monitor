@@ -1,6 +1,6 @@
 import os, re, time, json, tempfile, subprocess, tarfile, io, gzip, fnmatch
 import requests
-from db import is_event_seen, mark_event_seen, save_finding
+from db import is_event_seen, mark_event_seen, is_key_seen, save_finding
 from patterns import extract_keys, ALLOWED_EXTS, PATTERNS, get_combined_pattern, entropy
 
 SHODAN_KEY = os.getenv("SHODAN_KEY", "")
@@ -13,6 +13,7 @@ if GITHUB_TOKEN:
     HEADERS["Authorization"] = f"Bearer {GITHUB_TOKEN}"
 
 def log_result(service, key, source, repo="", file_path="", context="", entropy_val=0):
+    if is_key_seen(key): return
     save_finding(service, key, source, repo, file_path, context, entropy_val)
     print(f"  [{source}] {service} | {key[:40]}... | {repo[:50]}")
 
