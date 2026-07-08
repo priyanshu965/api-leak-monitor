@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>API Leak Monitor — Dashboard</title>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js"></script>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+         background: #0f1117; color: #e6edf3; padding: 2rem; }
+  h1 { font-size: 1.5rem; margin-bottom: 1.5rem; color: #58a6ff; }
+  .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 1rem; margin-bottom: 2rem; }
+  .card { background: #161b22; border: 1px solid #30363d; border-radius: 8px; padding: 1.25rem; }
+  .card h2 { font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.05em; color: #8b949e; margin-bottom: 0.5rem; }
+  .card .big { font-size: 2rem; font-weight: 700; color: #f0883e; }
+  .card .big.green { color: #3fb950; }
+  .card .sub { font-size: 0.75rem; color: #8b949e; margin-top: 0.25rem; }
+  .chart-wrap { background: #161b22; border: 1px solid #30363d; border-radius: 8px; padding: 1rem; margin-bottom: 1.5rem; }
+  .chart-wrap h3 { font-size: 0.85rem; color: #8b949e; margin-bottom: 0.75rem; }
+  table { width: 100%; border-collapse: collapse; }
+  th, td { text-align: left; padding: 0.5rem 0.75rem; font-size: 0.85rem; }
+  th { color: #8b949e; border-bottom: 1px solid #30363d; }
+  td { border-bottom: 1px solid #21262d; }
+  .dot { display: inline-block; width: 8px; height: 8px; border-radius: 50%; margin-right: 6px; }
+  #updated { font-size: 0.75rem; color: #8b949e; margin-top: 1rem; }
+  .loading { color: #8b949e; padding: 2rem; }
+</style>
+</head>
+<body>
+<h1>🛡️ API Leak Monitor — Dashboard</h1>
+
+<div class="grid">
+  <div class="card">
+    <h2>Total Findings</h2>
+    <div class="big" id="total">…</div>
+  </div>
+  <div class="card">
+    <h2>Live Keys</h2>
+    <div class="big green" id="live">…</div>
+    <div class="sub">confirmed valid</div>
+  </div>
+  <div class="card">
+    <h2>Sources Active</h2>
+    <div class="big" id="sources">…</div>
+  </div>
+  <div class="card">
+    <h2>Services Affected</h2>
+    <div class="big" id="services">…</div>
+  </div>
+</div>
+
+<div class="chart-wrap">
+  <h3>📈 Findings by Service</h3>
+  <canvas id="chart-service"></canvas>
+</div>
+
+<div class="chart-wrap">
+  <h3>🔍 Findings by Source</h3>
+  <canvas id="chart-source"></canvas>
+</div>
+
+<div class="chart-wrap">
+  <h3>📅 Findings Over Time</h3>
+  <canvas id="chart-time"></canvas>
+</div>
+
+<div class="chart-wrap">
+  <h3>📋 Recent Findings (sample)</h3>
+  <div id="recent">Loading…</div>
+</div>
+
+<div id="updated">Updated: never</div>
+
+<script>
+async function load() {
+  const r = await fetch("data.json?t=" + Date.now());
+  const d = await r.json();
+
+  document.getElementById("total").textContent = d.total;
+  document.getElementById("live").textContent = d.live;
+  document.getElementById("sources").textContent = Object.keys(d.by_source).length;
+  document.getElementById("services").textContent = Object.keys(d.by_service).length;
+  document.getElementById("updated").textContent = "Updated: " + new Date(d.updated).toLocaleString();
+
+  // Service chart
+  const svcLabels = Object.keys(d.by_service).slice(0, 12);
+  const svcData = svcLabels.map(k => d.by_service[k]);
+  new Chart(document.getElementById("chart-service"), {
+    type: "bar",
+    data: { labels: svcLabels, datasets: [{ data: svcData, backgroundColor: "#58a6ff" }] },
+    options: { plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true } } }
+  });
+
+  // Source chart
+  const srcLabels = Object.keys(d.by_source);
+  const srcData = srcLabels.map(k => d.by_source[k]);
+  new Chart(document.getElementById("chart-source"), {
+    type: "doughnut",
+    data: { labels: srcLabels, datasets: [{ data: srcData, backgroundColor: ["#58a6ff","#f0883e","#3fb950","#bc8cff","#f85149","#79c0ff"] }] },
+    options: { plugins: { legend: { labels: { color: "#e6edf3" } } } }
+  });
+
+  // Timeline chart
+  const timeLabels = Object.keys(d.timeline);
+  const timeData = timeLabels.map(k => d.timeline[k]);
+  new Chart(document.getElementById("chart-time"), {
+    type: "line",
+    data: { labels: timeLabels, datasets: [{ data: timeData, borderColor: "#58a6ff", tension: 0.3 }] },
+    options: { plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true } } }
+  });
+}
+
+load();
+setInterval(load, 300000); // refresh every 5 min
+</script>
+</body>
+</html>

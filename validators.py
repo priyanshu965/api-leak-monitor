@@ -49,6 +49,60 @@ def _stripe(k):
     try: return requests.get("https://api.stripe.com/v1/balance", auth=(k, ""), timeout=7).status_code == 200
     except: return "error"
 
+def _slack(k):
+    try: return requests.get("https://slack.com/api/auth.test", headers={"Authorization": f"Bearer {k}"}, timeout=7).status_code == 200
+    except: return "error"
+
+def _gitlab(k):
+    try: return requests.get("https://gitlab.com/api/v4/user", headers={"Authorization": f"Bearer {k}"}, timeout=7).status_code == 200
+    except: return "error"
+
+def _perplexity(k):
+    try: return requests.get("https://api.perplexity.ai/chat/completions", headers={"Authorization": f"Bearer {k}"}, json={"model":"pplx-70b-online","messages":[{"role":"user","content":"hi"}]}, timeout=7).status_code in (200, 400)
+    except: return "error"
+
+def _together(k):
+    try: return requests.get("https://api.together.xyz/v1/models", headers={"Authorization": f"Bearer {k}"}, timeout=7).status_code == 200
+    except: return "error"
+
+def _fireworks(k):
+    try: return requests.get("https://api.fireworks.ai/v1/models", headers={"Authorization": f"Bearer {k}"}, timeout=7).status_code == 200
+    except: return "error"
+
+def _discord(k):
+    try:
+        wid, wsec = k.split("/") if "/" in k else (k, "")
+        r = requests.get(f"https://discord.com/api/webhooks/{wid}/{wsec}", timeout=7)
+        return r.status_code in (200, 401)
+    except: return "error"
+
+def _sendgrid(k):
+    try: return requests.get("https://api.sendgrid.com/v3/user/profile", headers={"Authorization": f"Bearer {k}"}, timeout=7).status_code == 200
+    except: return "error"
+
+def _twilio(k):
+    try:
+        sid = k.split(":")[0] if ":" in k else k
+        r = requests.get(f"https://api.twilio.com/2010-04-01/Accounts/{sid}.json", auth=(sid, k.split(":")[1] if ":" in k else ""), timeout=7)
+        return r.status_code == 200
+    except: return "error"
+
+def _cloudflare(k):
+    try: return requests.get("https://api.cloudflare.com/client/v4/user/tokens/verify", headers={"Authorization": f"Bearer {k}"}, timeout=7).status_code == 200
+    except: return "error"
+
+def _vercel(k):
+    try: return requests.get("https://api.vercel.com/v2/user", headers={"Authorization": f"Bearer {k}"}, timeout=7).status_code == 200
+    except: return "error"
+
+def _aws(k):
+    # Can't validate access key without secret; accept format only
+    return len(k) == 20 and k.startswith("AKIA")
+
+def _azure(k):
+    # Can't validate connection string without parsing; accept format only
+    return "AccountKey=" in k and "AccountName=" in k
+
 register_validator("OpenAI", _openai)
 register_validator("Anthropic", _anthropic)
 register_validator("Google", _google)
@@ -61,3 +115,15 @@ register_validator("Replicate", _replicate)
 register_validator("Mistral", _mistral)
 register_validator("GitHub", _github)
 register_validator("Stripe", _stripe)
+register_validator("Slack", _slack)
+register_validator("GitLab", _gitlab)
+register_validator("Perplexity", _perplexity)
+register_validator("Together", _together)
+register_validator("Fireworks", _fireworks)
+register_validator("Discord", _discord)
+register_validator("SendGrid", _sendgrid)
+register_validator("Twilio", _twilio)
+register_validator("Cloudflare", _cloudflare)
+register_validator("Vercel", _vercel)
+register_validator("AWS", _aws)
+register_validator("Azure", _azure)

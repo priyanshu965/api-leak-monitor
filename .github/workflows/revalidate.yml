@@ -1,0 +1,37 @@
+name: Re-validate Keys
+on:
+  schedule:
+    - cron: "0 6,18 * * *"  # twice daily
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  revalidate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Restore scanner DB
+        uses: actions/cache/restore@v4
+        with:
+          path: scanner.db
+          key: scanner-db-v1
+          restore-keys: scanner-db-v1
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+      - name: Re-validate live keys
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          TELEGRAM_TOKEN: ${{ secrets.TELEGRAM_TOKEN }}
+          TELEGRAM_CHAT: ${{ secrets.TELEGRAM_CHAT }}
+        run: python revalidate.py
+      - name: Save scanner DB
+        uses: actions/cache/save@v4
+        if: always()
+        with:
+          path: scanner.db
+          key: scanner-db-v1

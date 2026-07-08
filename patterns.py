@@ -39,6 +39,26 @@ PLACEHOLDER_PATTERNS = [
     r"your-api-key-goes-here",
 ]
 
+# Known test/example keys (corpus for false positive filtering)
+KNOWN_TEST_KEYS = {
+    "sk-proj-example123456789012345678901234567890",
+    "sk-thisisatestkey12345678901234567890123",
+    "your_openai_api_key_here",
+    "REPLACE_ME_WITH_REAL_KEY",
+    "test_api_key_do_not_use",
+    "example_key_for_demo_only",
+    "sk-dummykeyfordocumentationpurposes",
+}
+
+def is_test_key(key):
+    k = key.strip()
+    if k in KNOWN_TEST_KEYS:
+        return True
+    # Also check for repeated patterns
+    if len(set(k)) < 8:  # Low unique char count (e.g., "aaaaaaaa...")
+        return True
+    return False
+
 ALLOWED_EXTS = {".py", ".js", ".ts", ".jsx", ".tsx", ".java", ".go", ".rb", ".php", ".sh", ".env", ".yml", ".yaml", ".json", ".ini", ".cfg", ".conf", ".toml", ".md", ".txt", ".cfg", ".properties"}
 
 _re_entire_pat = None
@@ -70,6 +90,7 @@ def extract_keys(text, min_entropy=3.6):
             if len(k) < 32: continue
             if re.match(r"^[0-9a-fA-F]{40,}$", k): continue
             if is_placeholder(k): continue
+            if is_test_key(k): continue
             e = entropy(k)
             if e < min_entropy: continue
             found.append({"service": service, "key": k, "entropy": e})

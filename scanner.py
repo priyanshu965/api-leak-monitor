@@ -85,6 +85,8 @@ def main():
         if os.getenv("GOOGLE_API_KEY") and os.getenv("GOOGLE_CX"):
             sources.scan_vercel()
             sources.scan_googledork()
+        sources.scan_s3()
+        sources.scan_gcs()
         if os.getenv("RUN_GITLEAKS"):
             sources.scan_gitleaks()
 

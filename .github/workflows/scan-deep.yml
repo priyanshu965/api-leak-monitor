@@ -46,6 +46,14 @@ jobs:
           DEEP_SCAN: "1"
           SCAN_PAGES: ${{ github.event.inputs.pages || '10' }}
         run: python scanner.py
+      - name: Export dashboard data
+        run: python export_findings.py
+      - name: Commit dashboard data
+        run: |
+          git config user.email "bot@github.com"
+          git config user.name "Dashboard Bot"
+          git add docs/data.json
+          git diff --cached --quiet || git commit -m "auto: update dashboard data" && git push || true
       - name: Save scanner DB
         uses: actions/cache/save@v4
         if: always()

