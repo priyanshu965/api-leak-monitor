@@ -82,6 +82,9 @@ def main():
         sources.scan_npm()
         sources.scan_pypi()
         sources.scan_dockerhub()
+        if os.getenv("GOOGLE_API_KEY") and os.getenv("GOOGLE_CX"):
+            sources.scan_vercel()
+            sources.scan_googledork()
         if os.getenv("RUN_GITLEAKS"):
             sources.scan_gitleaks()
 

@@ -1,4 +1,4 @@
-import os, re, time, json, tempfile, subprocess, tarfile, io, gzip, fnmatch
+import os, re, time, json, tempfile, subprocess, tarfile, io, gzip, fnmatch, urllib.parse
 import requests
 from db import is_event_seen, mark_event_seen, is_key_seen, save_finding
 from patterns import extract_keys, ALLOWED_EXTS, PATTERNS, get_combined_pattern, entropy
@@ -7,6 +7,8 @@ SHODAN_KEY = os.getenv("SHODAN_KEY", "")
 CENSYS_SECRET = os.getenv("CENSYS_SECRET", "")
 PASTEBIN_KEY = os.getenv("PASTEBIN_KEY", "")
 GITHUB_TOKEN = os.getenv("GITHUB_TOKEN", "")
+GOOGLE_API_KEY = os.getenv("GOOGLE_API_KEY", "")
+GOOGLE_CX = os.getenv("GOOGLE_CX", "")
 SCAN_PAGES = int(os.getenv("SCAN_PAGES", "10"))
 HEADERS = {"User-Agent": "API-Leak-Scanner/2.0"}
 if GITHUB_TOKEN:
@@ -251,8 +253,80 @@ def scan_pypi():
                                     for k in extract_keys(c):
                                         log_result(k["service"], k["key"], "pypi", pkg_name, member.name, f"pypi://{pkg_name}", k["entropy"])
                             tf.close()
-                        except: pass
             except: pass
+            except: pass
+
+# ── 11. Vercel (via Google dorking) ──
+
+VENCEL_DORKS = [
+    'site:vercel.app "OPENAI_API_KEY"',
+    'site:vercel.app "sk-proj-"',
+    'site:vercel.app filetype:env',
+    'site:vercel.app "AIzaSy"',
+    'site:*.vercel.app ".env" "API"',
+]
+
+def scan_vercel():
+    print("\n[Vercel Dorking]")
+    if not GOOGLE_API_KEY or not GOOGLE_CX:
+        return print("  No Google API key (set GOOGLE_API_KEY + GOOGLE_CX)")
+    for dork in VENCEL_DORKS:
+        try:
+            r = requests.get("https://www.googleapis.com/customsearch/v1", params={
+                "key": GOOGLE_API_KEY, "cx": GOOGLE_CX, "q": dork, "num": 10
+            }, timeout=15)
+            if r.status_code != 200: continue
+            for item in r.json().get("items", []):
+                link = item.get("link", "")
+                title = item.get("title", "")
+                snippet = item.get("snippet", "")
+                text = f"{title} {snippet}"
+                try:
+                    page = requests.get(link, timeout=10, headers=HEADERS).text
+                    text += " " + page
+                except: pass
+                for k in extract_keys(text):
+                    log_result(k["service"], k["key"], "vercel", link, "", f"vercel dork: {dork}", k["entropy"])
+        except Exception as e:
+            print(f"  Error: {e}")
+
+# ── 12. Google Dorking ──
+
+GOOGLE_DORKS = [
+    '"OPENAI_API_KEY" filetype:env',
+    '"sk-proj-" filetype:env',
+    '"ANTHROPIC_API_KEY" filetype:env',
+    '"AWS_ACCESS_KEY_ID" filetype:env',
+    '"-----BEGIN OPENSSH PRIVATE KEY-----"',
+    '"AIzaSy" filetype:json',
+    'inurl:passwords.txt "API"',
+    'inurl:.env.example "sk-"',
+    '"HF_TOKEN" filetype:env',
+    '"DATABASE_URL" filetype:env "password"',
+]
+
+def scan_googledork():
+    print("\n[Google Dorking]")
+    if not GOOGLE_API_KEY or not GOOGLE_CX:
+        return print("  No Google API key (set GOOGLE_API_KEY + GOOGLE_CX)")
+    for dork in GOOGLE_DORKS:
+        try:
+            r = requests.get("https://www.googleapis.com/customsearch/v1", params={
+                "key": GOOGLE_API_KEY, "cx": GOOGLE_CX, "q": dork, "num": 10
+            }, timeout=15)
+            if r.status_code != 200: continue
+            for item in r.json().get("items", []):
+                link = item.get("link", "")
+                snippet = item.get("snippet", "")
+                try:
+                    page = requests.get(link, timeout=10, headers=HEADERS).text
+                    for k in extract_keys(page):
+                        log_result(k["service"], k["key"], "googledork", link, "", f"dork: {dork}", k["entropy"])
+                except: pass
+                for k in extract_keys(snippet):
+                    log_result(k["service"], k["key"], "googledork", link, "", f"dork: {dork}", k["entropy"])
+        except Exception as e:
+            print(f"  Error: {e}")
     except Exception as e:
         print(f"  Error: {e}")
 

@@ -40,6 +40,8 @@ jobs:
           SHODAN_KEY: ${{ secrets.SHODAN_KEY }}
           CENSYS_SECRET: ${{ secrets.CENSYS_SECRET }}
           PASTEBIN_KEY: ${{ secrets.PASTEBIN_KEY }}
+          GOOGLE_API_KEY: ${{ secrets.GOOGLE_API_KEY }}
+          GOOGLE_CX: ${{ secrets.GOOGLE_CX }}
           RUN_GITLEAKS: "1"
           DEEP_SCAN: "1"
           SCAN_PAGES: ${{ github.event.inputs.pages || '10' }}
