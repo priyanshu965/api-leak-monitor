@@ -253,12 +253,14 @@ def scan_pypi():
                                     for k in extract_keys(c):
                                         log_result(k["service"], k["key"], "pypi", pkg_name, member.name, f"pypi://{pkg_name}", k["entropy"])
                             tf.close()
+                        except: pass
             except: pass
-            except: pass
+    except Exception as e:
+        print(f"  Error: {e}")
 
 # ── 11. Vercel (via Google dorking) ──
 
-VENCEL_DORKS = [
+VERCEL_DORKS = [
     'site:vercel.app "OPENAI_API_KEY"',
     'site:vercel.app "sk-proj-"',
     'site:vercel.app filetype:env',
@@ -270,7 +272,7 @@ def scan_vercel():
     print("\n[Vercel Dorking]")
     if not GOOGLE_API_KEY or not GOOGLE_CX:
         return print("  No Google API key (set GOOGLE_API_KEY + GOOGLE_CX)")
-    for dork in VENCEL_DORKS:
+    for dork in VERCEL_DORKS:
         try:
             r = requests.get("https://www.googleapis.com/customsearch/v1", params={
                 "key": GOOGLE_API_KEY, "cx": GOOGLE_CX, "q": dork, "num": 10
@@ -327,8 +329,6 @@ def scan_googledork():
                     log_result(k["service"], k["key"], "googledork", link, "", f"dork: {dork}", k["entropy"])
         except Exception as e:
             print(f"  Error: {e}")
-    except Exception as e:
-        print(f"  Error: {e}")
 
 # ── 10. Docker Hub ──
 
