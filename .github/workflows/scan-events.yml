@@ -10,7 +10,7 @@ on:
         required: false
 
 permissions:
-  contents: read
+  contents: write
 
 jobs:
   scan:
@@ -38,11 +38,13 @@ jobs:
       - name: Export dashboard data
         run: python export_findings.py
       - name: Commit dashboard data
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           git config user.email "bot@github.com"
           git config user.name "Dashboard Bot"
           git add docs/data.json
-          git diff --cached --quiet || git commit -m "auto: update dashboard data" && git push || true
+          git diff --cached --quiet || (git commit -m "auto: update dashboard data" && git push https://x-access-token:${GITHUB_TOKEN}@github.com/priyanshu965/api-leak-monitor.git)
       - name: Save scanner DB
         uses: actions/cache/save@v4
         if: always()
