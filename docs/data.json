@@ -1,8 +1,21 @@
 {
-  "total": 0,
-  "live": 0,
-  "by_service": {},
-  "by_source": {},
-  "timeline": {},
-  "updated": "2000-01-01T00:00:00"
+  "total": 28,
+  "live": 2,
+  "by_service": {
+    "OpenAI Legacy": 19,
+    "OpenAI Project": 3,
+    "DeepSeek": 1,
+    "HuggingFace": 1,
+    "Groq": 1,
+    "OpenRouter": 1,
+    "Google Gemini": 1,
+    "Anthropic": 1
+  },
+  "by_source": {
+    "sourcegraph": 28
+  },
+  "timeline": {
+    "2026-07-08": 28
+  },
+  "updated": "2026-07-08T19:06:02.627456"
 }
