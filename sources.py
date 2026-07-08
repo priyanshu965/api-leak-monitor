@@ -12,7 +12,11 @@ HEADERS = {"User-Agent": "API-Leak-Scanner/2.0"}
 if GITHUB_TOKEN:
     HEADERS["Authorization"] = f"Bearer {GITHUB_TOKEN}"
 
+_logged_this_run = set()
+
 def log_result(service, key, source, repo="", file_path="", context="", entropy_val=0):
+    if key in _logged_this_run: return
+    _logged_this_run.add(key)
     if is_key_seen(key): return
     save_finding(service, key, source, repo, file_path, context, entropy_val)
     print(f"  [{source}] {service} | {key[:40]}... | {repo[:50]}")

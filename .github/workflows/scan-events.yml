@@ -20,6 +20,12 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: "3.12"
+      - name: Restore scanner DB
+        uses: actions/cache/restore@v4
+        id: db-cache
+        with:
+          path: scanner.db
+          key: scanner-db-v1
       - name: Install dependencies
         run: pip install -r requirements.txt
       - name: Run events scan
@@ -29,6 +35,12 @@ jobs:
           TELEGRAM_CHAT: ${{ secrets.TELEGRAM_CHAT }}
           SCAN_PAGES: ${{ github.event.inputs.pages || '10' }}
         run: python scanner.py
+      - name: Save scanner DB
+        uses: actions/cache/save@v4
+        if: always()
+        with:
+          path: scanner.db
+          key: scanner-db-v1
       - name: Upload findings
         uses: actions/upload-artifact@v4
         if: always()

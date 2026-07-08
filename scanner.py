@@ -67,6 +67,7 @@ def main():
     print(f"API Leak Scanner v2 — {time.ctime()}")
     print("=" * 50)
     init()
+    import sources; sources._logged_this_run.clear()
 
     deep = os.getenv("DEEP_SCAN", "0") == "1"
 
