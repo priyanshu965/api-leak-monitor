@@ -1,8 +1,8 @@
 {
-  "total": 28,
+  "total": 26,
   "live": 2,
   "by_service": {
-    "OpenAI Legacy": 18,
+    "OpenAI Legacy": 16,
     "OpenAI Project": 4,
     "DeepSeek": 1,
     "HuggingFace": 1,
@@ -12,11 +12,11 @@
     "Anthropic": 1
   },
   "by_source": {
-    "sourcegraph": 28
+    "sourcegraph": 26
   },
   "timeline": {
     "2026-07-08": 25,
-    "2026-07-16": 3
+    "2026-07-16": 1
   },
-  "updated": "2026-07-16T12:06:01.895889"
+  "updated": "2026-07-16T13:59:38.640210"
 }
