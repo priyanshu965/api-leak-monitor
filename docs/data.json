@@ -1,9 +1,9 @@
 {
-  "total": 30,
+  "total": 28,
   "live": 2,
   "by_service": {
     "OpenAI Legacy": 19,
-    "OpenAI Project": 5,
+    "OpenAI Project": 3,
     "DeepSeek": 1,
     "HuggingFace": 1,
     "Groq": 1,
@@ -12,11 +12,11 @@
     "Anthropic": 1
   },
   "by_source": {
-    "sourcegraph": 30
+    "sourcegraph": 28
   },
   "timeline": {
     "2026-07-08": 25,
-    "2026-07-27": 5
+    "2026-07-27": 3
   },
-  "updated": "2026-07-27T21:14:42.457247"
+  "updated": "2026-07-27T21:47:31.464327"
 }
