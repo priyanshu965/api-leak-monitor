@@ -1,22 +1,24 @@
 {
-  "total": 28,
-  "live": 2,
+  "total": 34,
+  "live": 3,
   "by_service": {
     "OpenAI Legacy": 19,
-    "OpenAI Project": 3,
-    "DeepSeek": 1,
+    "OpenAI Project": 4,
+    "OpenRouter": 2,
+    "DeepSeek": 2,
+    "Google Gemini": 2,
+    "GitHub PAT": 1,
+    "xAI Grok": 1,
     "HuggingFace": 1,
     "Groq": 1,
-    "OpenRouter": 1,
-    "Google Gemini": 1,
     "Anthropic": 1
   },
   "by_source": {
-    "sourcegraph": 28
+    "sourcegraph": 34
   },
   "timeline": {
     "2026-07-08": 25,
-    "2026-08-19": 3
+    "2026-08-19": 9
   },
-  "updated": "2026-08-19T11:55:51.126811"
+  "updated": "2026-08-19T12:20:24.668867"
 }
