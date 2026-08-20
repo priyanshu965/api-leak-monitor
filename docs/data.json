@@ -2,8 +2,8 @@
   "total": 28,
   "live": 2,
   "by_service": {
-    "OpenAI Legacy": 19,
-    "OpenAI Project": 3,
+    "OpenAI Legacy": 18,
+    "OpenAI Project": 4,
     "DeepSeek": 1,
     "HuggingFace": 1,
     "Groq": 1,
@@ -18,5 +18,5 @@
     "2026-07-08": 25,
     "2026-08-20": 3
   },
-  "updated": "2026-08-20T12:21:33.193603"
+  "updated": "2026-08-20T12:55:30.962244"
 }
